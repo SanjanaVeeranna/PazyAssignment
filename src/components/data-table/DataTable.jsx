@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
     flexRender,
     getCoreRowModel,
@@ -6,20 +6,99 @@ import {
     getPaginationRowModel,
     useReactTable,
 } from "@tanstack/react-table"
-import { DndProvider } from "react-dnd"
+import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import * as XLSX from "xlsx"
-import { Download } from "lucide-react"
+import { Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 
 import { Button } from "../ui/Button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/Table"
 import { Checkbox } from "../ui/Checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/Tooltip"
 
-import { DraggableColumnHeader } from "../data-table/Header"
 import { ResizableHeader } from "../data-table/SecondaryHeader"
 import { TablePagination } from "../data-table/Pagination"
 import { mockData } from "../data/mockData"
+
+// Enhanced DraggableColumnHeader component with actual drag and drop functionality
+const DraggableColumnHeader = ({ header, table, children }) => {
+    const { getState, setColumnOrder } = table;
+    const { columnOrder } = getState();
+    const ref = useRef(null);
+
+    // Set up drag source
+    const [{ isDragging }, drag] = useDrag({
+        type: 'COLUMN',
+        item: () => ({
+            id: header.id,
+            index: columnOrder.indexOf(header.id),
+        }),
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+
+    // Set up drop target
+    const [{ isOver, canDrop }, drop] = useDrop({
+        accept: 'COLUMN',
+        drop: (item) => {
+            if (item.id !== header.id) {
+                const newColumnOrder = [...columnOrder];
+                const fromIndex = columnOrder.indexOf(item.id);
+                const toIndex = columnOrder.indexOf(header.id);
+
+                // Remove the item from its original position
+                newColumnOrder.splice(fromIndex, 1);
+                // Insert it at the new position
+                newColumnOrder.splice(toIndex, 0, item.id);
+
+                setColumnOrder(newColumnOrder);
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop(),
+        }),
+    });
+
+    // Combine ref functions for both drag and drop
+    const dragDropRef = (el) => {
+        drag(el);
+        drop(el);
+        ref.current = el;
+    };
+
+    // Visual styles based on drag state
+    const opacity = isDragging ? 0.5 : 1;
+    const dragStyles = isDragging
+        ? "shadow-lg scale-105 z-50 border-2 border-indigo-400 bg-indigo-100 bg-opacity-30"
+        : "";
+    const dropStyles = isOver && canDrop
+        ? "bg-indigo-100 border-2 border-indigo-500"
+        : "";
+
+    return (
+        <div
+            ref={dragDropRef}
+            className={`relative cursor-move rounded-sm ${dragStyles} ${dropStyles} transition-all duration-150`}
+            style={{ opacity }}
+        >
+            {children}
+        </div>
+    );
+};
+
+// Sorting icon component
+const SortingIcon = ({ column }) => {
+    if (!column.getCanSort()) return null;
+
+    if (column.getIsSorted() === "asc") {
+        return <ArrowUp className="ml-1 h-4 w-4" />;
+    } else if (column.getIsSorted() === "desc") {
+        return <ArrowDown className="ml-1 h-4 w-4" />;
+    }
+    return <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
+};
 
 export function DataTable() {
     // State for table data
@@ -56,6 +135,10 @@ export function DataTable() {
         "tooltip",
     ])
 
+    // State for column resizing
+    const [columnResizing, setColumnResizing] = useState({})
+    const [columnSizingInfo, setColumnSizingInfo] = useState({})
+
     // Define columns
     const columns = [
         {
@@ -65,7 +148,7 @@ export function DataTable() {
                     checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
-                    className="border-white data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-[#dc3545]"
+                    className="border-white mr-2 data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-[#dc3545]"
                 />
             ),
             cell: ({ row }) => (
@@ -73,7 +156,7 @@ export function DataTable() {
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
-                    className="ml-8"
+                    className="ml-20 "
                 />
             ),
             enableSorting: false,
@@ -106,7 +189,7 @@ export function DataTable() {
             accessorKey: "name",
             header: "Name",
             cell: ({ row }) => (
-                <div className="font-medium text-indigo-700">{row.getValue("name")}</div>
+                <div className="font-medium text-center text-indigo-700">{row.getValue("name")}</div>
             ),
             meta: {
                 isSticky: true,
@@ -125,7 +208,12 @@ export function DataTable() {
         },
         {
             accessorKey: "amount",
-            header: () => "Amount",
+            header: ({ column }) => (
+                <div className="flex items-center justify-center cursor-pointer" onClick={() => column.toggleSorting()}>
+                    Amount
+                    <SortingIcon column={column} />
+                </div>
+            ),
             cell: ({ row }) => {
                 const amount = Number.parseFloat(row.getValue("amount"));
                 const formatted = new Intl.NumberFormat("en-US", {
@@ -135,10 +223,10 @@ export function DataTable() {
 
                 // Color based on amount value
                 const colorClass = amount > 1000
-                    ? "text-emerald-600 font-semibold"
+                    ? "text-emerald-600 font-semibold text-center"
                     : amount > 500
-                        ? "text-amber-600"
-                        : "text-gray-600";
+                        ? "text-amber-600 text-center"
+                        : "text-gray-600 text-center";
 
                 return (
                     <div className={`text-left ${colorClass}`}>
@@ -146,6 +234,7 @@ export function DataTable() {
                     </div>
                 );
             },
+            enableSorting: true,
             meta: {
                 width: 140,
             },
@@ -175,7 +264,7 @@ export function DataTable() {
             accessorKey: "tableId",
             header: "Table ID",
             cell: ({ row }) => (
-                <div className="px-6 font-medium">{row.getValue("tableId")}</div>
+                <div className="px-6 font-medium text-center">{row.getValue("tableId")}</div>
             ),
             meta: {
                 isSticky: true,
@@ -193,6 +282,8 @@ export function DataTable() {
             rowSelection,
             pagination,
             columnOrder,
+            columnResizing,
+            columnSizingInfo,
         },
         enableRowSelection: true,
         enableColumnResizing: true,
@@ -201,6 +292,8 @@ export function DataTable() {
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
         onColumnOrderChange: setColumnOrder,
+        onColumnResizingChange: setColumnResizing,
+        onColumnSizingInfoChange: setColumnSizingInfo,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -243,18 +336,48 @@ export function DataTable() {
         setRowSelection({})
     }
 
+    // Function to reset column order to default
+    const resetColumnOrder = () => {
+        setColumnOrder([
+            "select",
+            "tableId",
+            "avatar",
+            "name",
+            "description",
+            "amount",
+            "tooltip",
+        ]);
+    }
+
     return (
         <div className="space-y-6">
             {/* Header with title and export button */}
             <div className="flex justify-between items-center px-2">
-                <h2 className="text-2xl font-bold text-[#dc3545]">Advanced Data Table</h2>
-                <Button
-                    onClick={exportToExcel}
-                    className="bg-[#dc3545] text-white"
-                >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export to Excel
-                </Button>
+                <h2 className="text-2xl font-bold text-[#dc3545]">PAZY (DATA TABLE)</h2>
+                <div className="flex space-x-2">
+                    <Button
+                        variant="outline"
+                        onClick={resetColumnOrder}
+                        className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                    >
+                        Reset Column Order
+                    </Button>
+                    <Button
+                        onClick={exportToExcel}
+                        className="bg-[#dc3545] text-white"
+                    >
+                        <Download className="mr-2 h-4 w-4" />
+                        Export to Excel
+                    </Button>
+                </div>
+            </div>
+
+            {/* Drag instruction */}
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-200 text-blue-800 flex items-center">
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Drag column headers to reorder them. Click on column edges to resize.</span>
             </div>
 
             {/* Pagination controls */}
@@ -275,18 +398,21 @@ export function DataTable() {
                                     >
                                         {headerGroup.headers.map((header) => {
                                             const isSticky = header.column.columnDef.meta?.isSticky;
-                                            const columnWidth = header.column.columnDef.meta?.width || "auto";
+                                            const columnWidth = header.getSize();
 
                                             return (
                                                 <TableHead
                                                     key={header.id}
-                                                    className="py-3 font-bold text-sm uppercase tracking-wider"
+                                                    className="py-3 font-bold text-sm uppercase tracking-wider relative"
+                                                    style={{
+                                                        width: `${columnWidth}px`,
+                                                    }}
                                                 >
                                                     {header.isPlaceholder ? null : (
                                                         <ResizableHeader header={header} table={table}>
-                                                            {header.column.getCanSort() ? (
+                                                            {header.column.columnDef.id !== "select" ? (
                                                                 <DraggableColumnHeader header={header} table={table}>
-                                                                    <div className="flex items-center justify-center">
+                                                                    <div className="flex items-center justify-center p-1">
                                                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                                                     </div>
                                                                 </DraggableColumnHeader>
@@ -296,6 +422,13 @@ export function DataTable() {
                                                                 </div>
                                                             )}
                                                         </ResizableHeader>
+                                                    )}
+                                                    {header.column.getCanResize() && (
+                                                        <div
+                                                            className={`absolute right-0 top-0 h-full w-1 bg-gray-300 cursor-col-resize select-none touch-none ${header.column.getIsResizing() ? "bg-indigo-500 w-1.5" : ""}`}
+                                                            onMouseDown={header.getResizeHandler()}
+                                                            onTouchStart={header.getResizeHandler()}
+                                                        />
                                                     )}
                                                 </TableHead>
                                             )
@@ -316,12 +449,15 @@ export function DataTable() {
                                         >
                                             {row.getVisibleCells().map((cell) => {
                                                 const isSticky = cell.column.columnDef.meta?.isSticky;
-                                                const columnWidth = cell.column.columnDef.meta?.width || "auto";
+                                                const columnWidth = cell.column.getSize();
 
                                                 return (
                                                     <TableCell
                                                         key={cell.id}
                                                         className="py-3"
+                                                        style={{
+                                                            width: `${columnWidth}px`,
+                                                        }}
                                                     >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </TableCell>
@@ -366,7 +502,6 @@ export function DataTable() {
                     </Button>
                 </div>
             </div>
-
         </div>
     )
 }
