@@ -1,14 +1,29 @@
 # PazyAssignment
-A modern, responsive, and interactive data table built with React, Tailwind CSS, and shadcn. It features column reordering, resizing, sorting, pagination, and Excel export functionality.
 
-# React + Vite
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PazyAssignment is a modern, responsive, and interactive data table application built with **React**, **Vite**, **Tailwind CSS**, and **shadcn**. It provides advanced features like column reordering, resizing, sorting, pagination, and exporting data to Excel.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Column Reordering**: Drag and drop columns to reorder them.
+- **Column Resizing**: Adjust column widths dynamically.
+- **Sorting**: Sort data by specific columns (e.g., ascending/descending).
+- **Pagination**: Navigate through data with configurable rows per page.
+- **Excel Export**: Export the current table view to an `.xlsx` file.
+- **Sticky Columns**: Keep specific columns (e.g., checkboxes) always visible.
+- **Responsive Design**: Optimized for desktop layouts with a clean and modern UI.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend**: React, Vite
+- **Styling**: Tailwind CSS, shadcn
+- **Drag-and-Drop**: `react-beautiful-dnd`
+- **Excel Export**: `xlsx` library
+- **Tooltips**: `@radix-ui/react-tooltip`
+
+## Installation
+
+Follow these steps to set up the project locally:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/SanjanaVeeranna/PazyAssignment.git
