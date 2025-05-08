@@ -90,7 +90,7 @@ export const mockData = [
   {
     tableId: "12",
     avatar: "src/assets/avatars/avt8.png",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
@@ -122,7 +122,7 @@ export const mockData = [
   {
     tableId: "16",
     avatar: "src/assets/avatars/avt10.png",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
@@ -154,7 +154,7 @@ export const mockData = [
   {
     tableId: "20",
     avatar: "src/assets/avatars/avt8.png",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
@@ -186,7 +186,7 @@ export const mockData = [
   {
     tableId: "24",
     avatar: "src/assets/avatars/avt10.png",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
@@ -218,7 +218,7 @@ export const mockData = [
   {
     tableId: "28",
     avatar: "src/assets/avatars/avt3.png",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
@@ -250,7 +250,7 @@ export const mockData = [
   {
     tableId: "32",
     avatar: "src/assets/avatars/avt9.jpeg",
-    name: "Jennifer White",
+    name: "Milan White",
     description: "Technical Writer with experience in API documentation",
     amount: 850.25,
     tooltip: "Improved developer onboarding time by 30%",
